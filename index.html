@@ -623,11 +623,16 @@ function closeFeed(){
   activeSlide=null;
 }
 
+function goTo(idx,smooth){
+  idx=Math.max(0,Math.min(current.length-1,idx));
+  while(feedBuilt<=idx&&feedBuilt<current.length)buildMoreSlides();
+  var el=feedScroll.children[idx];
+  if(!el)return;
+  el.scrollIntoView({behavior:smooth?'smooth':'auto',block:'start'});
+  setActive(el);  // activate now, don't wait for the scroll observer
+}
 function step(dir){
-  var next=Math.max(0,Math.min(current.length-1,(activeIdx<0?0:activeIdx)+dir));
-  while(feedBuilt<=next&&feedBuilt<current.length)buildMoreSlides();
-  var el=feedScroll.children[next];
-  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  goTo((activeIdx<0?0:activeIdx)+dir,true);
 }
 
 /* ---------- auto-advance (10s per Short) ---------- */
@@ -638,7 +643,7 @@ function startAuto(){
   feedAuto.textContent='❚❚';
   autoTimer=setInterval(function(){
     if(activeIdx>=current.length-1){stopAuto();return;}
-    step(1);
+    goTo(activeIdx+1,true);
   },AUTO_MS);
 }
 function stopAuto(){
