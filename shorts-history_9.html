@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shorts History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b0e;
+  --panel:#141419;
+  --line:#232330;
+  --text:#f2f2f5;
+  --muted:#8a8a99;
+  --red:#ff0033;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:'Archivo',sans-serif}
+body{min-height:100vh;padding-bottom:80px}
+body.locked{overflow:hidden}
+
+header{padding:28px 20px 8px;max-width:1200px;margin:0 auto}
+h1{
+  font-variation-settings:'wdth' 122,'wght' 850;
+  font-size:clamp(26px,5vw,40px);
+  letter-spacing:-.5px;line-height:1;
+  text-transform:uppercase;
+}
+h1 .tick{color:var(--red)}
+.sub{color:var(--muted);font-size:13px;margin-top:8px;font-variation-settings:'wdth' 100,'wght' 450}
+
+.wrap{max-width:1200px;margin:0 auto;padding:16px 20px}
+
+/* upload */
+#drop{
+  border:1.5px dashed var(--line);border-radius:14px;
+  padding:44px 20px;text-align:center;cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+#drop.hover{border-color:var(--red);background:#141018}
+#drop strong{display:block;font-variation-settings:'wdth' 110,'wght' 700;font-size:16px;margin-bottom:6px}
+#drop span{color:var(--muted);font-size:13px}
+#file{display:none}
+
+/* stats + scan */
+#stats{display:none;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.stat{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:10px 14px;font-size:13px;color:var(--muted)
+}
+.stat b{color:var(--text);font-variation-settings:'wght' 750;font-size:15px;margin-right:5px}
+#scanBtn{
+  margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:10px;
+  padding:11px 18px;font-family:inherit;font-size:14px;cursor:pointer;
+  font-variation-settings:'wdth' 108,'wght' 700;
+}
+#scanBtn:disabled{opacity:.45;cursor:default}
+#prog{display:none;margin-bottom:14px}
+#progBar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+#progFill{height:100%;width:0;background:var(--red);transition:width .2s}
+#progTxt{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* controls */
+#controls{display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+#search,#sort{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;
+}
+#search{flex:1;min-width:160px}
+#search:focus,#sort:focus,#swipeBtn:focus-visible{outline:2px solid var(--red);outline-offset:-1px}
+#swipeBtn{
+  background:#fff;color:#000;border:none;border-radius:10px;
+  padding:10px 18px;font-family:inherit;font-size:14px;cursor:pointer;
+  font-variation-settings:'wdth' 108,'wght' 750;
+}
+
+/* grid */
+#grid{display:block}
+.mhead{
+  font-variation-settings:'wdth' 110,'wght' 800;
+  font-size:15px;text-transform:uppercase;letter-spacing:.5px;
+  margin:26px 2px 12px;display:flex;align-items:baseline;gap:9px;
+}
+.mhead:first-child{margin-top:6px}
+.mhead .mc{
+  font-size:12px;color:var(--muted);font-variation-settings:'wght' 500;
+  text-transform:none;letter-spacing:0;
+}
+.mgrid{
+  display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(138px,1fr));
+}
+.card{
+  display:block;position:relative;border-radius:12px;overflow:hidden;
+  background:var(--panel);border:1px solid var(--line);
+  color:var(--text);cursor:pointer;text-align:left;text-decoration:none;
+  font-family:inherit;
+  transition:transform .12s;
+  padding:0;
+}
+.card:hover{transform:translateY(-3px)}
+.card:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.thumb{width:100%;aspect-ratio:9/16;object-fit:cover;display:block;background:#1a1a22}
+.meta{padding:8px 9px 10px}
+.t{
+  font-size:12px;line-height:1.3;font-variation-settings:'wght' 600;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  min-height:31px;
+}
+.c{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d{font-size:10.5px;color:var(--muted);margin-top:2px}
+.n{
+  position:absolute;top:6px;right:6px;background:rgba(0,0,0,.72);
+  font-size:10.5px;padding:2px 7px;border-radius:20px;
+  font-variation-settings:'wght' 700;
+}
+#empty{display:none;color:var(--muted);text-align:center;padding:60px 20px;font-size:14px}
+#sentinel{height:1px}
+
+/* ---------- feed (swipe mode) ---------- */
+#feed{
+  display:none;position:fixed;inset:0;z-index:50;background:#000;
+}
+#feed.open{display:block}
+#feedScroll{
+  height:100%;overflow-y:scroll;
+  scroll-snap-type:y mandatory;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+#feedScroll::-webkit-scrollbar{display:none}
+.slide{
+  height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;
+  position:relative;display:flex;align-items:center;justify-content:center;
+  background:#000;cursor:pointer;text-decoration:none;color:inherit;
+}
+.slide .ph{
+  height:100dvh;width:calc(100dvh * 9 / 16);max-width:100vw;
+  object-fit:cover;background:#111;display:block;
+}
+.slide .play{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:74px;height:74px;border-radius:50%;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid rgba(255,255,255,.85);pointer-events:none;
+  transition:transform .15s,background .15s;
+}
+.slide:active .play{transform:translate(-50%,-50%) scale(.9);background:var(--red)}
+.slide .play svg{width:30px;height:30px;margin-left:4px;fill:#fff}
+.slide .tapinfo{
+  position:absolute;top:calc(50% + 52px);left:50%;transform:translateX(-50%);
+  font-size:11px;color:rgba(255,255,255,.6);pointer-events:none;white-space:nowrap;
+  font-variation-settings:'wght' 500;
+}
+.info{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;
+  padding:16px 76px calc(18px + env(safe-area-inset-bottom)) 16px;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));
+  pointer-events:none;
+}
+.info .it{font-size:14px;font-variation-settings:'wght' 650;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.info .ic{font-size:12px;color:#c9c9d4;margin-top:4px}
+.feedbtn{
+  position:fixed;z-index:60;background:rgba(20,20,25,.78);color:#fff;
+  border:1px solid rgba(255,255,255,.15);border-radius:50%;
+  width:42px;height:42px;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);font-family:inherit;text-decoration:none;
+}
+#feedClose{top:calc(12px + env(safe-area-inset-top));left:12px}
+#feedAuto{top:calc(12px + env(safe-area-inset-top));left:64px}
+#feedAuto.on{background:var(--red);border-color:var(--red)}
+#feedPlay{top:calc(12px + env(safe-area-inset-top));left:116px}
+#feedPlay.on{background:var(--red);border-color:var(--red)}
+.slide iframe{
+  position:absolute;border:0;height:100dvh;
+  width:calc(100dvh * 9 / 16);max-width:100vw;
+  left:50%;top:0;transform:translateX(-50%);z-index:1;
+}
+#feedCount{
+  position:fixed;z-index:60;top:calc(20px + env(safe-area-inset-top));right:14px;
+  font-size:12px;color:#c9c9d4;background:rgba(20,20,25,.6);
+  padding:5px 10px;border-radius:20px;backdrop-filter:blur(6px);
+}
+.navhint{position:fixed;z-index:60;right:12px;display:none}
+@media (hover:hover){
+  .navhint{display:flex;flex-direction:column;gap:8px;top:50%;transform:translateY(-50%)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .card,#drop,#progFill,.slide .play{transition:none}
+  .card:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Shorts<span class="tick">/</span>History</h1>
+  <div class="sub">Load <b>watch-history.json</b> from Google Takeout → scan → swipe through every Short you've watched.</div>
+</header>
+
+<div class="wrap">
+  <div id="drop" tabindex="0" role="button" aria-label="Load watch-history.json">
+    <strong>Drop watch-history.json here</strong>
+    <span>or tap to pick the file (Takeout → YouTube → history, JSON format)</span>
+    <input type="file" id="file" accept=".json,application/json">
+  </div>
+
+  <div id="stats">
+    <div class="stat"><b id="sTotal">0</b>videos (since Jul 12)</div>
+    <div class="stat"><b id="sShorts">0</b>Shorts (since Jul 12)</div>
+    <div class="stat"><b id="sPend">0</b>unchecked</div>
+    <button id="scanBtn">Scan for Shorts</button>
+  </div>
+
+  <div id="prog">
+    <div id="progBar"><div id="progFill"></div></div>
+    <div id="progTxt"></div>
+  </div>
+
+  <div id="controls">
+    <input id="search" type="search" placeholder="Search title or channel…" aria-label="Search">
+    <select id="sort" aria-label="Sort">
+      <option value="new">Newest first</option>
+      <option value="old">Oldest first</option>
+      <option value="most">Most rewatched</option>
+    </select>
+    <button id="swipeBtn">▶ Swipe</button>
+  </div>
+
+  <div id="grid"></div>
+  <div id="empty">No Shorts match.</div>
+  <div id="sentinel"></div>
+</div>
+
+<!-- fullscreen swipe feed -->
+<div id="feed" aria-modal="true" role="dialog">
+  <div id="feedScroll"></div>
+  <button class="feedbtn" id="feedClose" aria-label="Close feed">✕</button>
+  <button class="feedbtn" id="feedAuto" aria-label="Auto-advance">▶</button>
+  <button class="feedbtn" id="feedPlay" aria-label="Play videos inline">📺</button>
+  <div id="feedCount"></div>
+  <div class="navhint">
+    <button class="feedbtn" id="navUp" aria-label="Previous">↑</button>
+    <button class="feedbtn" id="navDn" aria-label="Next">↓</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var drop=document.getElementById('drop'),
+    fileIn=document.getElementById('file'),
+    stats=document.getElementById('stats'),
+    sTotal=document.getElementById('sTotal'),
+    sShorts=document.getElementById('sShorts'),
+    sPend=document.getElementById('sPend'),
+    scanBtn=document.getElementById('scanBtn'),
+    prog=document.getElementById('prog'),
+    progFill=document.getElementById('progFill'),
+    progTxt=document.getElementById('progTxt'),
+    controls=document.getElementById('controls'),
+    search=document.getElementById('search'),
+    sortSel=document.getElementById('sort'),
+    swipeBtn=document.getElementById('swipeBtn'),
+    grid=document.getElementById('grid'),
+    empty=document.getElementById('empty'),
+    sentinel=document.getElementById('sentinel'),
+    feed=document.getElementById('feed'),
+    feedScroll=document.getElementById('feedScroll'),
+    feedClose=document.getElementById('feedClose'),
+    feedAuto=document.getElementById('feedAuto'),
+    feedPlay=document.getElementById('feedPlay'),
+    feedCount=document.getElementById('feedCount'),
+    navUp=document.getElementById('navUp'),
+    navDn=document.getElementById('navDn');
+
+// videos: Map id -> {id,title,channel,times:[ms desc],short:true|false|null}
+var videos=new Map();
+var scanning=false;
+var WINDOW_DAYS=13;
+var cutoff=0;  // newest watch time minus WINDOW_DAYS, set after parse
+
+/* ---------- load & parse ---------- */
+
+drop.addEventListener('click',function(){fileIn.click()});
+drop.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();fileIn.click()}});
+['dragover','dragenter'].forEach(function(ev){
+  drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add('hover')});
+});
+['dragleave','drop'].forEach(function(ev){
+  drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('hover')});
+});
+drop.addEventListener('drop',function(e){
+  if(e.dataTransfer.files.length)readFile(e.dataTransfer.files[0]);
+});
+fileIn.addEventListener('change',function(){
+  if(fileIn.files.length)readFile(fileIn.files[0]);
+});
+
+function readFile(f){
+  var r=new FileReader();
+  r.onload=function(){
+    var data;
+    try{data=JSON.parse(r.result)}
+    catch(err){alert('Could not parse that file as JSON. Make sure you exported history in JSON format (not HTML).');return}
+    if(!Array.isArray(data)){alert('Unexpected format — expected the Takeout watch-history.json array.');return}
+    parse(data);
+  };
+  r.readAsText(f);
+}
+
+function idFrom(url){
+  var m=url.match(/[?&]v=([\w-]{11})/); if(m)return m[1];
+  m=url.match(/\/shorts\/([\w-]{11})/); if(m)return m[1];
+  return null;
+}
+
+function parse(data){
+  videos.clear();
+  for(var i=0;i<data.length;i++){
+    var e=data[i];
+    if(!e||!e.titleUrl||!e.title)continue;
+    if(e.header&&e.header!=='YouTube')continue;
+    if(e.details&&e.details.some(function(d){return d&&/Ads/i.test(d.name||'')}))continue;
+    var id=idFrom(e.titleUrl);
+    if(!id)continue;
+    var title=e.title.replace(/^Watched\s+/,'');
+    var t=e.time?Date.parse(e.time):0;
+    var isShortUrl=e.titleUrl.indexOf('/shorts/')!==-1;
+    var v=videos.get(id);
+    if(!v){
+      v={id:id,title:title,channel:(e.subtitles&&e.subtitles[0]&&e.subtitles[0].name)||'',times:[],short:isShortUrl?true:null};
+      videos.set(id,v);
+    }
+    if(isShortUrl)v.short=true;
+    if(t)v.times.push(t);
+  }
+  videos.forEach(function(v){v.times.sort(function(a,b){return b-a})});
+  var newest=0;
+  videos.forEach(function(v){if(v.times[0]&&v.times[0]>newest)newest=v.times[0]});
+  var nd=new Date(newest);nd.setHours(0,0,0,0);
+  cutoff=nd.getTime()-(WINDOW_DAYS-1)*86400000;
+  drop.style.display='none';
+  stats.style.display='flex';
+  controls.style.display='flex';
+  refreshStats();
+  render();
+  if(pending().length===0)scanBtn.style.display='none';
+}
+
+function isRecent(v){
+  return v.times.some(function(t){return t>=cutoff});
+}
+function pending(){
+  var out=[];videos.forEach(function(v){if(v.short===null&&isRecent(v))out.push(v)});return out;
+}
+function shorts(){
+  var out=[];videos.forEach(function(v){if(v.short===true&&isRecent(v))out.push(v)});return out;
+}
+function refreshStats(){
+  var rTotal=0;videos.forEach(function(v){if(isRecent(v))rTotal++});
+  sTotal.textContent=rTotal.toLocaleString();
+  sShorts.textContent=shorts().length.toLocaleString();
+  sPend.textContent=pending().length.toLocaleString();
+}
+
+/* ---------- shorts detection ----------
+   Shorts have a vertical thumbnail at i.ytimg.com/vi/{id}/oardefault.jpg.
+   A missing thumbnail loads as a 120x90 gray placeholder, so any other
+   size means it's a Short. Heuristic, but very accurate. */
+
+function testShort(id){
+  return new Promise(function(res){
+    var img=new Image();
+    img.onload=function(){res(!(img.naturalWidth===120&&img.naturalHeight===90))};
+    img.onerror=function(){res(false)};
+    img.src='https://i.ytimg.com/vi/'+id+'/oardefault.jpg';
+  });
+}
+
+scanBtn.addEventListener('click',function(){
+  if(scanning)return;
+  scanning=true;scanBtn.disabled=true;scanBtn.textContent='Scanning…';
+  prog.style.display='block';
+  var queue=pending(),total=queue.length,done=0,found=0,CONC=12;
+  function tick(){
+    progFill.style.width=(done/total*100)+'%';
+    progTxt.textContent=done.toLocaleString()+' / '+total.toLocaleString()+' checked · '+found.toLocaleString()+' new Shorts';
+  }
+  function worker(){
+    if(!queue.length)return Promise.resolve();
+    var v=queue.shift();
+    return testShort(v.id).then(function(isS){
+      v.short=isS;done++;if(isS)found++;
+      if(done%25===0||done===total){tick();refreshStats();render(true)}
+      return worker();
+    });
+  }
+  var pool=[];for(var i=0;i<CONC;i++)pool.push(worker());
+  Promise.all(pool).then(function(){
+    scanning=false;
+    scanBtn.textContent='Scan complete';
+    tick();refreshStats();render();
+    setTimeout(function(){prog.style.display='none';scanBtn.style.display='none'},1500);
+  });
+  tick();
+});
+
+/* ---------- list + grid ---------- */
+
+var current=[], monthGroups=[], groupsShown=0;
+
+function fmt(ms){
+  return new Date(ms).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+}
+function dayKey(ms){
+  var d=new Date(ms);return d.getFullYear()*10000+d.getMonth()*100+d.getDate();
+}
+function dayLabel(ms){
+  return new Date(ms).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+}
+
+// Build day groups (each a grid) and a flat `current` array whose order
+// matches what's shown, so the swipe feed stays consistent with the page.
+function computeList(){
+  var q=search.value.trim().toLowerCase();
+  var list=shorts().filter(function(v){
+    // only Shorts with at least one view in the recent window
+    var recent=v.times.some(function(t){return t>=cutoff});
+    if(!recent)return false;
+    return !q||v.title.toLowerCase().indexOf(q)!==-1||v.channel.toLowerCase().indexOf(q)!==-1;
+  });
+  var s=sortSel.value;
+  // within a day: first watched that day first (chronological)
+  function within(a,b){
+    if(s==='most')return b.times.length-a.times.length;
+    return (a.times[0]||0)-(b.times[0]||0);
+  }
+  // bucket by day of most-recent watch
+  var buckets={};
+  list.forEach(function(v){
+    var k=dayKey(v.times[0]||0);
+    (buckets[k]||(buckets[k]=[])).push(v);
+  });
+  var keys=Object.keys(buckets).map(Number);
+  keys.sort(function(a,b){return s==='old'?a-b:b-a});
+  monthGroups=keys.map(function(k){
+    var items=buckets[k];items.sort(within);
+    return {label:dayLabel(items[0].times[0]||0),count:items.length,items:items};
+  });
+  // flatten in display order
+  current=[];
+  monthGroups.forEach(function(g){
+    g.start=current.length;
+    g.items.forEach(function(v){current.push(v)});
+  });
+}
+
+function card(v,idx){
+  var b=document.createElement('a');
+  b.className='card';
+  b.href='https://www.youtube.com/shorts/'+v.id;
+  b.target='_blank';
+  b.rel='noopener';
+  var count=v.times.length>1?'<span class="n">'+v.times.length+'×</span>':'';
+  b.innerHTML=count+
+    '<img class="thumb" loading="lazy" alt="" src="https://i.ytimg.com/vi/'+v.id+'/oardefault.jpg" '+
+    'onerror="this.src=\'https://i.ytimg.com/vi/'+v.id+'/hqdefault.jpg\';this.onerror=null">'+
+    '<div class="meta"><div class="t"></div><div class="c"></div>'+
+    '<div class="d">'+(v.times[0]?fmt(v.times[0]):'')+'</div></div>';
+  b.querySelector('.t').textContent=v.title;
+  b.querySelector('.c').textContent=v.channel;
+  b.addEventListener('click',function(e){
+    // let ctrl/cmd/shift/middle-click and right-click use the native link
+    if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return;
+    e.preventDefault();
+    openFeed(idx);
+  });
+  return b;
+}
+
+function render(keepScroll){
+  computeList();
+  grid.innerHTML='';groupsShown=0;
+  empty.style.display=current.length?'none':'block';
+  more();
+  fillViewport();
+}
+
+function more(){
+  if(groupsShown>=monthGroups.length)return;
+  var g=monthGroups[groupsShown];
+  var head=document.createElement('div');
+  head.className='mhead';
+  head.innerHTML='<span></span><span class="mc"></span>';
+  head.children[0].textContent=g.label;
+  head.children[1].textContent=g.count+(g.count===1?' short':' shorts');
+  var mg=document.createElement('div');
+  mg.className='mgrid';
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<g.items.length;i++)frag.appendChild(card(g.items[i],g.start+i));
+  mg.appendChild(frag);
+  grid.appendChild(head);
+  grid.appendChild(mg);
+  groupsShown++;
+}
+
+// render more months until the sentinel is pushed below the viewport
+function fillViewport(){
+  var guard=0;
+  while(groupsShown<monthGroups.length&&guard<40){
+    var r=sentinel.getBoundingClientRect();
+    if(r.top>window.innerHeight+400)break;
+    more();guard++;
+  }
+}
+
+new IntersectionObserver(function(entries){
+  if(entries[0].isIntersecting){more();fillViewport()}
+},{rootMargin:'900px'}).observe(sentinel);
+
+var deb;
+search.addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(render,180)});
+sortSel.addEventListener('change',function(){render()});
+
+/* ---------- swipe feed ----------
+   Fullscreen vertical scroll-snap feed of thumbnails. Tapping a slide
+   opens that Short on YouTube (app on mobile, tab on desktop) — inline
+   embeds are avoided because most Shorts refuse to play embedded. */
+
+var FEED_PAGE=30;
+var feedBuilt=0, activeIdx=-1, slideObs=null;
+var playMode=false, activeSlide=null;
+
+var PLAY_SVG='<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+
+function slideEl(v,idx){
+  var s=document.createElement('a');
+  s.className='slide';
+  s.dataset.idx=idx;
+  s.href='https://www.youtube.com/shorts/'+v.id;
+  s.target='_blank';
+  s.rel='noopener';
+  s.innerHTML=
+    '<img class="ph" loading="lazy" alt="" src="https://i.ytimg.com/vi/'+v.id+'/oardefault.jpg" '+
+    'onerror="this.src=\'https://i.ytimg.com/vi/'+v.id+'/hqdefault.jpg\';this.onerror=null">'+
+    '<div class="play">'+PLAY_SVG+'</div>'+
+    '<div class="tapinfo">tap to watch on YouTube</div>'+
+    '<div class="info"><div class="it"></div><div class="ic"></div></div>';
+  s.querySelector('.it').textContent=v.title;
+  s.querySelector('.ic').textContent=v.channel+(v.times[0]?' · watched '+fmt(v.times[0]):'')+(v.times.length>1?' · '+v.times.length+'×':'');
+  slideObs.observe(s);
+  return s;
+}
+
+function buildMoreSlides(){
+  var frag=document.createDocumentFragment();
+  var end=Math.min(feedBuilt+FEED_PAGE,current.length);
+  for(var i=feedBuilt;i<end;i++)frag.appendChild(slideEl(current[i],i));
+  feedBuilt=end;
+  feedScroll.appendChild(frag);
+}
+
+function unmountEmbed(){
+  if(activeSlide){
+    var f=activeSlide.querySelector('iframe');
+    if(f)f.remove();
+  }
+}
+function mountEmbed(slide){
+  if(!playMode||!slide)return;
+  if(slide.querySelector('iframe'))return;
+  var v=current[+slide.dataset.idx];
+  var f=document.createElement('iframe');
+  f.allow='autoplay; encrypted-media; picture-in-picture';
+  f.allowFullscreen=true;
+  f.src='https://www.youtube.com/embed/'+v.id+
+        '?autoplay=1&playsinline=1&rel=0&loop=1&playlist='+v.id;
+  slide.appendChild(f);
+}
+
+function setActive(slide){
+  if(slide===activeSlide)return;
+  unmountEmbed();
+  activeSlide=slide;
+  activeIdx=+slide.dataset.idx;
+  feedCount.textContent=(activeIdx+1).toLocaleString()+' / '+current.length.toLocaleString();
+  mountEmbed(slide);
+  if(feedBuilt-activeIdx<8&&feedBuilt<current.length)buildMoreSlides();
+}
+
+function openFeed(startIdx){
+  if(!current.length)return;
+  feed.classList.add('open');
+  document.body.classList.add('locked');
+  feedScroll.innerHTML='';
+  feedBuilt=0;activeIdx=-1;activeSlide=null;
+  if(slideObs)slideObs.disconnect();
+  slideObs=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting&&en.intersectionRatio>=0.6)setActive(en.target);
+    });
+  },{root:feedScroll,threshold:[0.6]});
+  while(feedBuilt<=startIdx||feedBuilt<Math.min(FEED_PAGE,current.length))buildMoreSlides();
+  var target=feedScroll.children[startIdx];
+  if(target)target.scrollIntoView({behavior:'instant',block:'start'});
+}
+
+function closeFeed(){
+  stopAuto();
+  feed.classList.remove('open');
+  document.body.classList.remove('locked');
+  if(slideObs)slideObs.disconnect();
+  feedScroll.innerHTML='';
+  activeSlide=null;
+}
+
+function step(dir){
+  var next=Math.max(0,Math.min(current.length-1,(activeIdx<0?0:activeIdx)+dir));
+  while(feedBuilt<=next&&feedBuilt<current.length)buildMoreSlides();
+  var el=feedScroll.children[next];
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- auto-advance (10s per Short) ---------- */
+var AUTO_MS=10000, autoTimer=null;
+function startAuto(){
+  if(autoTimer)return;
+  feedAuto.classList.add('on');
+  feedAuto.textContent='❚❚';
+  autoTimer=setInterval(function(){
+    if(activeIdx>=current.length-1){stopAuto();return;}
+    step(1);
+  },AUTO_MS);
+}
+function stopAuto(){
+  if(!autoTimer)return;
+  clearInterval(autoTimer);autoTimer=null;
+  feedAuto.classList.remove('on');
+  feedAuto.textContent='▶';
+}
+function toggleAuto(){autoTimer?stopAuto():startAuto();}
+
+function togglePlay(){
+  playMode=!playMode;
+  feedPlay.classList.toggle('on',playMode);
+  if(playMode)mountEmbed(activeSlide);
+  else unmountEmbed();
+}
+
+swipeBtn.addEventListener('click',function(){openFeed(0)});
+feedClose.addEventListener('click',closeFeed);
+feedAuto.addEventListener('click',toggleAuto);
+feedPlay.addEventListener('click',togglePlay);
+navUp.addEventListener('click',function(){step(-1)});
+navDn.addEventListener('click',function(){step(1)});
+document.addEventListener('keydown',function(e){
+  if(!feed.classList.contains('open'))return;
+  if(e.key==='Escape')closeFeed();
+  else if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();step(1)}
+  else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();step(-1)}
+  else if(e.key===' '||e.code==='Space'){e.preventDefault();step(e.shiftKey?-1:1)}
+});
+
+})();
+</script>
+</body>
+</html>
